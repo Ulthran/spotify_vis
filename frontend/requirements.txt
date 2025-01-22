@@ -1,0 +1,4 @@
+dash==2.15.0
+apig-wsgi==2.18.0
+spotipy==2.25.0
+pandas==2.2.3

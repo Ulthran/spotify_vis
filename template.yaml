@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 1024
+  Api:
+    BinaryMediaTypes:
+      # The following is important for correct handling (b64) of binary data, e.g. png, jpg
+      - "*/*"
+
+Resources:
+  SpotifyVisFrontendFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: frontend/
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      Architectures:
+        - x86_64
+      Events:
+        # We want to capture both the root as well as everything after the root path
+        RootIntegration:
+          Type: Api
+          Properties:
+            Path: "/"
+            Method: ANY
+        ProxyIntegration:
+          Type: Api
+          Properties:
+            Path: "/{proxy+}"
+            Method: ANY
+      Environment:
+        Variables:
+          CREDENTIALS_PARAM: /spotify-vis/spotipy/client-secret
+          SPOTIPY_CLIENT_ID: !Sub '{{resolve:ssm:/spotify-vis/spotipy/client-id}}'
+      Policies:
+        # Grant the Lambda function permission to read the secure parameters
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/spotify-vis/spotipy/client-secret
+        - Statement:
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+            Resource:
+              - !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/alias/aws/ssm
+
+Outputs:
+  ServerlessDashApi:
+    Description: "API Gateway endpoint URL for Prod stage for Serverless Dash App"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
