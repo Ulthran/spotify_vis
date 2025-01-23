@@ -39,52 +39,33 @@ class SpotipyVis:
                 "followers": 0,
             }
 
-    def get_monthlies(self):
-        import re
+    def get_user_playlists(self, username):
+        pls = self.sp.user_playlists(username)
+        playlists = [
+            {
+                "Name": pl["name"],
+                "Id": pl["id"],
+                "Tracks": pl["tracks"]["total"],
+                "Image": pl["images"][0]["url"] if pl["images"] else None,
+            }
+            for pl in pls["items"]
+        ]
+        return playlists
 
-        playlists = self.sp.user_playlists("charlie_bushman")
-        monthlies = []
-        while playlists:
-            # Note that apparently some playlists' apostrophe is encoded as ' while others are ‘ so we search both with ['‘]
-            playlists["items"] = [p for p in playlists["items"] if p]
-            playlists["items"] = [
-                p
-                for p in playlists["items"]
-                if re.search(r"[A-Z][a-z]{2} ['‘]\d{2}", p["name"])
-            ]
-            for playlist in playlists["items"]:
-                playlist["name"] = playlist["name"].replace("‘", "'")
-                monthlies.append(playlist)
-            if playlists["next"]:
-                playlists = self.sp.next(playlists)
-            else:
-                playlists = None
-
-        return monthlies
-
-    # Fetch Global Top Tracks
-    def get_global_top_tracks(self):
-        playlist_id = "37i9dQZF1DXcBWIGoYBM5M"  # Spotify's Top Today playlist
-        results = self.sp.playlist_items(playlist_id, limit=10, market="US")
+    def get_playlist_tracks(self, playlist_id):
+        plts = self.sp.playlist_tracks(playlist_id)
         tracks = [
             {
                 "Track": item["track"]["name"],
+                "Id": item["track"]["id"],
                 "Artist": ", ".join(
                     artist["name"] for artist in item["track"]["artists"]
                 ),
                 "Popularity": item["track"]["popularity"],
                 "Duration (ms)": item["track"]["duration_ms"],
+                # "Audio Features": afs[item["track"]["id"]],
             }
-            for item in results["items"]
+            for item in plts["items"]
         ]
-        return pd.DataFrame(tracks)
 
-    # Fetch Audio Features for a Track
-    def get_audio_features(self, track_id):
-        features = self.sp.audio_features([track_id])[0]
-        return {
-            "Danceability": features["danceability"],
-            "Energy": features["energy"],
-            "Tempo": features["tempo"],
-            "Valence (Positivity)": features["valence"],
-        }
+        return pd.DataFrame(tracks)
