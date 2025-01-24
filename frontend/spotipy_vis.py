@@ -6,7 +6,11 @@ from spotipy.oauth2 import SpotifyClientCredentials
 
 
 class SpotipyVis:
-    def __init__(self, client_id=os.environ.get("SPOTIPY_CLIENT_ID"), credentials=None):
+    def __init__(
+        self,
+        client_id=os.environ.get("SPOTIPY_CLIENT_ID"),
+        credentials=os.environ.get("SPOTIPY_CLIENT_SECRET"),
+    ):
         if not credentials:
             print("Retrieving Spotipy credentials from SSM...")
             ssm = boto3.client("ssm")

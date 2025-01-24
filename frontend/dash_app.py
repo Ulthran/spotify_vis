@@ -17,10 +17,7 @@ def build_app(dash_kwargs: dict = None) -> Dash:
         **dash_kwargs,
     )
 
-    sv = SpotipyVis(
-        client_id="1428584e1c294003bd962a4a441be19a",
-        credentials="2e06b6708e924db293ea6396027303d3",
-    )
+    sv = SpotipyVis()
     default_username = "charlie_bushman"
     default_user_info = sv.get_user(default_username)
 
